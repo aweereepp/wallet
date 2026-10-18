@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Кошелёк</title>
+<style>
+:root{--bg:#f3f1ec;--card:#fff;--ink:#1d2b24;--mute:#76837b;--line:#e3e0d8;--plus:#1f7a4d;--minus:#b4412f;--accent:#1f7a4d;--onaccent:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--card:#1b241f;--ink:#e8efe9;--mute:#8a998f;--line:#2a362f;--plus:#4cc38a;--minus:#e8806e;--accent:#4cc38a;--onaccent:#0c1410;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121815;--card:#1b241f;--ink:#e8efe9;--mute:#8a998f;--line:#2a362f;--plus:#4cc38a;--minus:#e8806e;--accent:#4cc38a;--onaccent:#0c1410;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif}
+body{max-width:480px;margin:0 auto;padding:20px 18px 40px}
+.top{padding:28px 4px 22px}
+.lbl{color:var(--mute);font-size:15px}
+.sum{font-size:52px;font-weight:700;letter-spacing:-1px;margin-top:4px;word-break:break-all}
+.sum small{font-size:28px;font-weight:600;color:var(--mute);margin-left:4px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+input{width:100%;font:inherit;font-size:22px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);outline:none}
+input:focus{border-color:var(--accent)}
+input.note{font-size:16px;margin-top:10px}
+.row{display:flex;gap:10px;margin-top:12px}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px}
+.row button{flex:1;padding:14px 8px;font-size:17px;font-weight:600;color:#fff}
+.add{background:var(--plus)}.sub{background:var(--minus)}
+:root:not([data-theme="light"]) .add,:root:not([data-theme="light"]) .sub{}
+@media (prefers-color-scheme:dark){.add,.sub{color:#0c1410}}
+.link{background:none;color:var(--mute);font-size:14px;padding:12px 4px 0;text-decoration:underline}
+h2{font-size:17px;margin:26px 4px 10px;font-weight:700}
+.item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .t{flex:1;min-width:0}
+.item .n{font-size:16px;overflow-wrap:anywhere}
+.item .d{font-size:13px;color:var(--mute);margin-top:2px}
+.item .v{font-weight:700;font-size:17px;white-space:nowrap}
+.pos{color:var(--plus)}.neg{color:var(--minus)}
+.del{background:none;color:var(--mute);font-size:22px;padding:4px 8px;line-height:1}
+.empty{color:var(--mute);text-align:center;padding:22px 8px;font-size:15px}
+.err{color:var(--minus);font-size:14px;min-height:18px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="lbl">У меня есть</div>
+  <div class="sum" id="sum">0<small id="cur">₽</small></div>
+</div>
+
+<div class="panel">
+  <input id="amt" type="text" inputmode="decimal" placeholder="Сумма" autocomplete="off">
+  <input id="note" class="note" type="text" placeholder="Комментарий (необязательно)" autocomplete="off">
+  <div class="row">
+    <button class="add" id="bAdd">Добавить</button>
+    <button class="sub" id="bSub">Потратить</button>
+  </div>
+  <div class="err" id="err"></div>
+  <button class="link" id="bSet">Задать точную сумму</button>
+</div>
+
+<h2>История</h2>
+<div class="panel" id="list"></div>
+
+<script>
+var KEY="koshelek_v1", entries=[];
+function load(){try{var r=localStorage.getItem(KEY);if(r){var p=JSON.parse(r);if(Array.isArray(p))entries=p;}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(entries));}catch(e){}}
+function total(){var s=0;entries.forEach(function(e){s+=e.a});return Math.round(s*100)/100}
+function fmt(n){return n.toLocaleString("ru-RU",{maximumFractionDigits:2})}
+function parse(){var v=document.getElementById("amt").value.replace(/\s/g,"").replace(",",".");var n=parseFloat(v);return (isFinite(n)&&n>=0&&v!=="")?n:null}
+function err(t){document.getElementById("err").textContent=t||""}
+function push(a,note){entries.unshift({id:Date.now()+Math.random(),d:Date.now(),a:Math.round(a*100)/100,n:note});save();document.getElementById("amt").value="";document.getElementById("note").value="";err("");render()}
+function render(){
+  document.getElementById("sum").firstChild.nodeValue=fmt(total());
+  var l=document.getElementById("list");
+  if(!entries.length){l.innerHTML='<div class="empty">Пока пусто. Введите сумму и нажмите «Добавить».</div>';return}
+  l.innerHTML="";
+  entries.forEach(function(e){
+    var d=new Date(e.d),row=document.createElement("div");row.className="item";
+    var ds=d.toLocaleDateString("ru-RU",{day:"numeric",month:"short"})+", "+d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+    row.innerHTML='<div class="t"><div class="n"></div><div class="d">'+ds+'</div></div><div class="v '+(e.a>=0?"pos":"neg")+'">'+(e.a>=0?"+":"−")+fmt(Math.abs(e.a))+'</div><button class="del" aria-label="Удалить">×</button>';
+    row.querySelector(".n").textContent=e.n||(e.a>=0?"Пополнение":"Расход");
+    row.querySelector(".del").onclick=function(){entries=entries.filter(function(x){return x.id!==e.id});save();render()};
+    l.appendChild(row)
+  })
+}
+document.getElementById("bAdd").onclick=function(){var n=parse();if(n===null||n===0)return err("Введите сумму больше нуля");push(n,document.getElementById("note").value.trim())};
+document.getElementById("bSub").onclick=function(){var n=parse();if(n===null||n===0)return err("Введите сумму больше нуля");push(-n,document.getElementById("note").value.trim())};
+document.getElementById("bSet").onclick=function(){var n=parse();if(n===null)return err("Введите сумму, которая у вас сейчас есть");var diff=n-total();if(Math.abs(diff)<0.005){err("");return}push(diff,"Новая сумма")};
+load();render();
+</script>
+</body>
+</html>
