@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Кошелёк</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f7a4d">
+<link rel="icon" href="icon-192.png">
 <style>
 :root{--bg:#f3f1ec;--card:#fff;--ink:#1d2b24;--mute:#76837b;--line:#e3e0d8;--plus:#1f7a4d;--minus:#b4412f;--accent:#1f7a4d;--onaccent:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -87,6 +90,7 @@ document.getElementById("bAdd").onclick=function(){var n=parse();if(n===null||n=
 document.getElementById("bSub").onclick=function(){var n=parse();if(n===null||n===0)return err("Введите сумму больше нуля");push(-n,document.getElementById("note").value.trim())};
 document.getElementById("bSet").onclick=function(){var n=parse();if(n===null)return err("Введите сумму, которая у вас сейчас есть");var diff=n-total();if(Math.abs(diff)<0.005){err("");return}push(diff,"Новая сумма")};
 load();render();
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
 </script>
 </body>
 </html>
